@@ -1,0 +1,40 @@
+Esto es una prueba para ver si domino git.
+Aquí iré colocando los comandos que me parezcan útiles.
+cd Desktop/TFG
+	cambia el working directory
+pwd
+	dice que WD es el actual
+ls
+	lista los archivos en la carpeta
+git init
+	abre un repositorio local
+notepad inicio.txt
+	abre inicio.txt en el bloc de notas
+	como en linux, se puede hacer notepad ... & para poder seguir usando la consola
+git clone path/al/repositorio
+	crea una copia local del repo
+	si se utiliza un servidor remoto?: git clone username@host:path...
+touch archivo.py
+	crea un archivo nuevo
+git add <archivo>
+	añade el archivo al 'staging index'
+git add .
+	añade todo al 'staging index'
+git status
+	nos dice los cambios realizados
+git commit
+	nos lleva a una terminal de VIM para editar nuestro mensaje
+git push
+	nos pide usuario y contraseña para subir los commits
+git log
+	nos dice los IDs de los commits para poder usar etiquetas
+	para ver más líneas: f
+	para ver menos lineas: b
+	para salir: q
+git log --oneline
+	para verlo resumido
+git tag <version de software> <id del commit>
+	podemos decir qué versión del software corresponde a cada commit
+	el id del commit se ve usando git log
+git checkout -b rama_nueva
+	crea una rama nueva y se mueve a esa rama
