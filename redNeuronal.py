@@ -35,11 +35,11 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
     Theta = {} #Diccionario donde se van guardando las thetas
     for l in range(1,nLayers): #Va desde 1 hasta nLayers-1
         epsilon = np.sqrt(6)/np.sqrt(s[l-1]+s[l])
-        Theta[l] = np.zeros((s[l],s[l-1]+1)) #np.matrix((('0 '*(s[l-1]+1)+';')*s[l])[:-2],dtype=float) #matrices de ceros de s[l+1] filas y s[l]+1 columnas
+        Theta[l] = np.zeros((s[l],s[l-1]+1)) #matrices de ceros de s[l] filas y s[l-1]+1 columnas
         for x in range(np.shape(Theta[l])[0]):
-            for y in range(np.shape(Theta[l])[1]):
-                Theta[l][x,y] = random()*2*epsilon-epsilon #inicializa aleatoriamente las matrices theta
-    def coste():
+            for Y in range(np.shape(Theta[l])[1]):
+                Theta[l][x,Y] = random()*2*epsilon-epsilon #inicializa aleatoriamente las matrices theta
+    def coste(): #Hay que hacer que le llegue una lista de valores de theta y que luego los monte en matrices
         ## Calculo de la primera ronda
         a = {1:X}
         z = {}
@@ -47,27 +47,37 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
             a[l-1] = np.c_[np.ones(np.shape(a[l-1])[0]),a[l-1]]
             a[l]=sigmoid(a[l-1]*Theta[l-1].transpose())
         ## Back Propagation
-        ## Esto tarda un poco...
         delta = {}
         Delta = {}
         for l in range(1,nLayers): #Va desde 1 hasta nLayers-1
-            Delta[l] = np.matrix((('0 '*(s[l-1]+1)+';')*s[l])[:-2],dtype=float)
+            Delta[l] = np.zeros((s[l],s[l-1]+1))
         for t in range(m):
             at = {1:X[t,:]}
             for l in range(2,nLayers+1):
                 at[l-1] = np.c_[np.ones(np.shape(at[l-1])[0]),at[l-1]]
                 at[l]=sigmoid(at[l-1]*Theta[l-1].transpose())
-            delta[nLayers] = at[nLayers]-y
+            delta[nLayers] = at[nLayers]-y[t,:]
             for l in range(nLayers-1,0,-1):
-                delta[l] = np.multiply(np.multiply(Theta[l].transpose()*delta[l+1],at[l]),(1-at[l]))
+                if l == nLayers-1:
+                    delta[l] = np.multiply(np.multiply(delta[l+1]*Theta[l],at[l]),(1-at[l]))
+                else:
+                    delta[l] = np.multiply(np.multiply(delta[l+1][:,1:]*Theta[l],at[l]),(1-at[l]))
             for l in range(1,nLayers):
-                Delta[l] = Delta[l] + delta[l+1]*at[l]
+                if l == nLayers-1:
+                    Delta[l] = Delta[l] + delta[l+1].transpose()*at[l]
+                else:
+                    Delta[l] = Delta[l] + (delta[l+1][:,1:]).transpose()*at[l]
         D={}
         for l in range(1,nLayers):
-            D[l] = Delta[l]/m
-            D[l][:,1:] += Lambda*Theta[l][:,1:]
-        print D
-    coste()
+            D[l] = Delta[l]/float(m)
+            D[l][:,1:] = D[l][:,1:] + float(Lambda)/float(m)*Theta[l][:,1:] #Revisar si aquí se divide también entre m
+        J = -1./float(m)*np.sum(np.multiply(y,np.log(a[nLayers]))+np.multiply(1-y,np.log(1-a[nLayers])))
+        suma = 0.
+        for l in range(1,nLayers):
+            suma += np.sum(np.multiply(Theta[l][:,1:],Theta[l][:,1:]))
+        J += Lambda/(2.*m)*suma
+        return J
+    print coste()
     print 'Done!'
 
 def sigmoid(z):
@@ -75,4 +85,8 @@ def sigmoid(z):
 
 X=np.matrix('1 2 3;4 5 6;7 8 9;2 4 6;1 3 5;9 8 7')
 y = np.matrix('1;0;0;1;0;1')
-__main__(X,y)
+__main__(X,y,comprob=True)
+
+X = np.matrix(np.genfromtxt('X.txt',delimiter = '|'))
+y = np.matrix(np.genfromtxt('y.txt',delimiter = '|'))#Datos de reconocimiento de digitos
+__main__(X,y,3,400,[400,25,10],True,0)
