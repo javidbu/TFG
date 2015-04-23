@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from random import *
+from scipy.optimize import minimize
 
 def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda = 0):
     '''Hace una red neuronal de NLAYERS capas, con los datos de training (X,Y),
@@ -39,13 +40,35 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
         for x in range(np.shape(Theta[l])[0]):
             for Y in range(np.shape(Theta[l])[1]):
                 Theta[l][x,Y] = random()*2*epsilon-epsilon #inicializa aleatoriamente las matrices theta
-    def coste(): #Hay que hacer que le llegue una lista de valores de theta y que luego los monte en matrices
-        ## Calculo de la primera ronda
+    param = np.array(0).reshape(-1)[0:0]
+    for l in range(1,nLayers):
+        param = np.concatenate((param,np.array(Theta[l]).reshape(-1,)))
+    def coste(param): #Hay que hacer que le llegue una lista de valores de theta y que luego los monte en matrices
+        '''Devuelve el valor de la función de coste para valores dados de PARAM.
+        PARAM debe ser un array de parametros, no un diccionario de matrices'''
+        Theta = {}
+        for l in range(1,nLayers):
+            Theta[l] = np.matrix(param[:s[l]*(s[l-1]+1)]).reshape((s[l],s[l-1]+1))
+            param = param[s[l]*(s[l-1]+1):]
         a = {1:X}
         z = {}
         for l in range(2,nLayers+1):
             a[l-1] = np.c_[np.ones(np.shape(a[l-1])[0]),a[l-1]]
             a[l]=sigmoid(a[l-1]*Theta[l-1].transpose())
+        J = -1./float(m)*np.sum(np.multiply(y,np.log(a[nLayers]))+np.multiply(1-y,np.log(1-a[nLayers])))
+        suma = 0.
+        for l in range(1,nLayers):
+            suma += np.sum(np.multiply(Theta[l][:,1:],Theta[l][:,1:]))
+        J += Lambda/(2.*m)*suma
+        return J
+    def costeGrad(param):
+        '''Devuelve el gradiente de la funcion de coste usando el metodo back propagation.
+        PARAM es un array de parametros, no un diccionario de matrices.
+        Devuelve un array con los valores del gradiente.'''
+        Theta = {}
+        for l in range(1,nLayers):
+            Theta[l] = np.matrix(param[:s[l]*(s[l-1]+1)]).reshape((s[l],s[l-1]+1))
+            param = param[s[l]*(s[l-1]+1):]
         ## Back Propagation
         delta = {}
         Delta = {}
@@ -71,22 +94,26 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
         for l in range(1,nLayers):
             D[l] = Delta[l]/float(m)
             D[l][:,1:] = D[l][:,1:] + float(Lambda)/float(m)*Theta[l][:,1:] #Revisar si aquí se divide también entre m
-        J = -1./float(m)*np.sum(np.multiply(y,np.log(a[nLayers]))+np.multiply(1-y,np.log(1-a[nLayers])))
-        suma = 0.
+        grad = np.array(0).reshape(-1)[0:0]
         for l in range(1,nLayers):
-            suma += np.sum(np.multiply(Theta[l][:,1:],Theta[l][:,1:]))
-        J += Lambda/(2.*m)*suma
-        return J
-    print coste()
-    print 'Done!'
+            grad = np.concatenate((grad,np.array(D[l]).reshape(-1,)))
+        return grad
+    ## Minimizacion
+    res = minimize(coste, param, method = 'BFGS', jac = costeGrad, options = {'disp':True}) #'maxiter':1 tambien da Memory Error...
+    #Memory Error para BFGS, CG y Newton-CG tardan demasiado...
+    print res.x
+    print '\nCoste:\n',coste(res.x),'\n'
+    
 
 def sigmoid(z):
     return 1./(1+np.exp(-z))
 
-X=np.matrix('1 2 3;4 5 6;7 8 9;2 4 6;1 3 5;9 8 7')
-y = np.matrix('1;0;0;1;0;1')
-__main__(X,y,comprob=True)
+##X=np.matrix('1 2 3;4 5 6;7 8 9;2 4 6;1 3 5;9 8 7')
+##y = np.matrix('1;0;0;1;0;1')
+##__main__(X,y,comprob=True,Lambda = 0)
+##__main__(X,y,comprob=True,Lambda = 1)
+##__main__(X,y,comprob=True,Lambda = 10)
 
 X = np.matrix(np.genfromtxt('X.txt',delimiter = '|'))
 y = np.matrix(np.genfromtxt('y.txt',delimiter = '|'))#Datos de reconocimiento de digitos
-__main__(X,y,3,400,[400,25,10],True,0)
+__main__(X,y,3,400,[400,25,10],True,10)
