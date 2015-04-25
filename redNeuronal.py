@@ -36,7 +36,7 @@ def main(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda = 0
     ## Inicializacion de las Thetas
     Theta = {} #Diccionario donde se van guardando las thetas
     for l in range(1,nLayers): #Va desde 1 hasta nLayers-1
-        epsilon = 0.12 #np.sqrt(6)/np.sqrt(s[l-1]+s[l])
+        epsilon = np.sqrt(6)/np.sqrt(s[l-1]+s[l])
         Theta[l] = np.zeros((s[l],s[l-1]+1)) #matrices de ceros de s[l] filas y s[l-1]+1 columnas
         for x in range(np.shape(Theta[l])[0]):
             for Y in range(np.shape(Theta[l])[1]):

@@ -109,27 +109,3 @@ def fmincg(f,fgrad,X,options=None):
             z1 = np.float_(1/(1-d1))
             ls_failed = 1
     return (X,fX,i)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
