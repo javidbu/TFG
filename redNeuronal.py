@@ -2,8 +2,9 @@
 import numpy as np
 from random import *
 from scipy.optimize import minimize
+from fmincg import *
 
-def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda = 0):
+def main(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda = 0):
     '''Hace una red neuronal de NLAYERS capas, con los datos de training (X,Y),
     con NINPUT variables en los datos de entrada. S es una lista del numero de unidades
     en cada layer.
@@ -35,15 +36,16 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
     ## Inicializacion de las Thetas
     Theta = {} #Diccionario donde se van guardando las thetas
     for l in range(1,nLayers): #Va desde 1 hasta nLayers-1
-        epsilon = np.sqrt(6)/np.sqrt(s[l-1]+s[l])
+        epsilon = 0.12 #np.sqrt(6)/np.sqrt(s[l-1]+s[l])
         Theta[l] = np.zeros((s[l],s[l-1]+1)) #matrices de ceros de s[l] filas y s[l-1]+1 columnas
         for x in range(np.shape(Theta[l])[0]):
             for Y in range(np.shape(Theta[l])[1]):
-                Theta[l][x,Y] = random()*2*epsilon-epsilon #inicializa aleatoriamente las matrices theta
-    param = np.array(0).reshape(-1)[0:0]
+                Theta[l][x,Y] = random()*2*epsilon-epsilon #uniform(0,1)*2*epsilon-epsilon #inicializa aleatoriamente las matrices theta
+    param = np.zeros((1,1))[0:0]
     for l in range(1,nLayers):
-        param = np.concatenate((param,np.array(Theta[l]).reshape(-1,)))
-    def coste(param): #Hay que hacer que le llegue una lista de valores de theta y que luego los monte en matrices
+        param = np.concatenate((param,np.array(Theta[l]).reshape((-1,1))))
+    param = np.matrix(param)
+    def coste(param): 
         '''Devuelve el valor de la función de coste para valores dados de PARAM.
         PARAM debe ser un array de parametros, no un diccionario de matrices'''
         Theta = {}
@@ -93,27 +95,24 @@ def __main__(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda
         D={}
         for l in range(1,nLayers):
             D[l] = Delta[l]/float(m)
-            D[l][:,1:] = D[l][:,1:] + float(Lambda)/float(m)*Theta[l][:,1:] #Revisar si aquí se divide también entre m
+            D[l][:,1:] = D[l][:,1:] + float(Lambda)/float(m)*Theta[l][:,1:]
         grad = np.array(0).reshape(-1)[0:0]
         for l in range(1,nLayers):
             grad = np.concatenate((grad,np.array(D[l]).reshape(-1,)))
-        return grad
-    ## Minimizacion
-    res = minimize(coste, param, method = 'BFGS', jac = costeGrad, options = {'disp':True}) #'maxiter':1 tambien da Memory Error...
-    #Memory Error para BFGS, CG y Newton-CG tardan demasiado...
-    print res.x
-    print '\nCoste:\n',coste(res.x),'\n'
-    
+        return np.matrix(grad).transpose()
+    res = fmincg(coste,costeGrad,param,options={'MaxIter':50})
+    print res[2],'iteraciones'
+    print 'Coste:',res[1][-1]
 
 def sigmoid(z):
     return 1./(1+np.exp(-z))
 
 ##X=np.matrix('1 2 3;4 5 6;7 8 9;2 4 6;1 3 5;9 8 7')
 ##y = np.matrix('1;0;0;1;0;1')
-##__main__(X,y,comprob=True,Lambda = 0)
-##__main__(X,y,comprob=True,Lambda = 1)
-##__main__(X,y,comprob=True,Lambda = 10)
+##main(X,y,comprob=True,Lambda = 0)
+##main(X,y,comprob=True,Lambda = 1)
+##main(X,y,comprob=True,Lambda = 10)
 
 X = np.matrix(np.genfromtxt('X.txt',delimiter = '|'))
 y = np.matrix(np.genfromtxt('y.txt',delimiter = '|'))#Datos de reconocimiento de digitos
-__main__(X,y,3,400,[400,25,10],True,10)
+main(X,y,3,400,[400,25,10],True,1)
