@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from random import *
-from scipy.optimize import minimize
 from fmincg import *
 
 def main(X, y, nLayers = 2, nInput = None, s = None, comprob = False, Lambda = 0):
