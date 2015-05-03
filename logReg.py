@@ -5,6 +5,10 @@ from leer import *
 import time
 #minimize da errores!!!
 
+#Ver si deja de dar memory errors el codigo de numpy usando numexpr
+#import numexpr as ne
+#ne.evaluate('SENTENCIA A EVALUAR')
+
 ##def main(X,y,Lambda = 0,comprob = False):
 ##    (m,nFeat) = np.shape(X)
 ##    (my,nOut) = np.shape(y)
@@ -77,8 +81,9 @@ class LogReg:
         self.umbral = umbral
         self.m = len(X.keys()) #Numero de transacciones
         self.nFeat = len(X.values()[0]) #Numero de variables de entrada
-        for k in self.X.keys():
-            self.X[k] = [1]+self.X[k] #Añadimos unos al principio de cada transaccion
+        self.X = {k: [1] + self.X[k] for k in self.X.keys()} #Mas rapido...
+##        for k in self.X.keys():
+##            self.X[k] = [1]+self.X[k] #Añadimos unos al principio de cada transaccion
         self.my = len(y.keys()) #Numero de transacciones en la y
         if self.m != self.my:
             raise TypeError('El numero de transacciones de X no concuerda con el de y')
@@ -93,67 +98,82 @@ class LogReg:
         self.comparar(self.y,self.predict(self.X))
     def h(self,theta,x): #Hipotesis para valores dados de theta y x
         '''Calcula la h_theta(x) de la regresion logistica.'''
-        suma = 0
-        for i in range(len(theta)): #Esto estaría mejor con vectores...
-            suma += theta[i]*x[i] 
+        suma = sum(theta[i]*x[i] for i in xrange(len(theta))) #Mas rapido
+##        suma = 0
+##        for i in range(len(theta)): #Esto estaría mejor con vectores...
+##            suma += theta[i]*x[i] 
         return sigmoid(suma)         
     def coste(self, theta, X, y, Lambda): #Tarda 2 minutos... El problema serio esta en el gradiente, pero esto tampoco es admisible...
         '''Calcula el valor de la funcion de coste para valores dados
            de theta, X, y y Lambda'''
         print 'Llamada a la funcion de coste'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
-        suma = 0.
-        keys = X.keys()
-        m = len(keys)
-        for k in xrange(m): #Esto iria mejor con vectores
-            suma += y[keys[k]]*np.log(self.h(theta,X[keys[k]]))#Aqui da errores, igual seria mejor que calculase las cosas con un if (ademas supongo que sera mas rapido)
-            suma += (1-y[keys[k]])*np.log(1-self.h(theta,X[keys[k]]))
+        m = len(X.keys())
+        suma = sum(y[k]*np.log(self.h(theta,X[k])) if y[k] == 1
+                    else (1-y[k])*np.log(1-self.h(theta,X[k])) for k in X.keys())
+##        suma = 0.
+##        keys = X.keys()
+##        m = len(keys)
+##        for k in xrange(m): #Esto iria mejor con vectores
+##            suma += y[keys[k]]*np.log(self.h(theta,X[keys[k]]))#Aqui da errores, igual seria mejor que calculase las cosas con un if (ademas supongo que sera mas rapido)
+##            suma += (1-y[keys[k]])*np.log(1-self.h(theta,X[keys[k]]))
         suma = suma/(float(m))
-        suma2 = 0.
-        for j in range(1,len(theta)): #Regularizacion, ignoramos theta_0
-            suma2 += theta[j]**2
+        suma2 = sum(j**2 for j in theta[1:])
+##        suma2 = 0.
+##        for j in range(1,len(theta)): #Regularizacion, ignoramos theta_0
+##            suma2 += theta[j]**2
         suma2 = suma2*Lambda/(2.*m)
         print 'Coste calculado'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         return -suma + suma2
     def grad(self, theta, X, y, Lambda):#Esto parece ser lo que mas tarda... 33 minutos!
+        '''Calcula el gradiente de la funcion de coste para valores dados
+           de theta, X, y y Lambda'''
         print 'Llamada al gradiente'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         keys = X.keys()
         m = len(keys)
-        grad = [0]*len(theta)
-        for j in range(len(grad)):
-            for k in xrange(m): #Hay que usar vectores y matrices!!!
-                grad[j] += (self.h(theta,X[keys[k]])-y[keys[k]])*X[keys[k]][j]
-            if j != 0:
-                grad[j] += Lambda*theta[j]
+        grad = [sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in X.keys()) + Lambda*theta[j] if j > 0 else
+                sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in X.keys()) for j in range(len(theta))]
+##        grad = [0]*len(theta)
+##        for j in range(len(grad)):
+##            for k in xrange(m): #Hay que usar vectores y matrices!!!
+##                grad[j] += (self.h(theta,X[keys[k]])-y[keys[k]])*X[keys[k]][j]
+##            if j != 0:
+##                grad[j] += Lambda*theta[j]
         print 'Gradiente calculado'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         return [x/float(m) for x in grad]
     def optim(self):
+        '''Llama a la funcion minimize para hallar el valor optimo de theta'''
         print 'Optimizando theta'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         res = minimize(self.coste, self.init_theta,
                        args = (self.X, self.y, self.Lambda),
                        method = 'BFGS', jac=self.grad,
                        options={'maxiter': 400,'disp':True})
+        #BFGS no funciona bien (precission loss... 0 iteraciones...)... probando con Newton-CG
         self.theta = res.x
         print 'Theta optimizada'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
     def predict(self,X):
+        '''Predice el valor de y dado X'''
         self.optim()
         keys = X.keys()
         m = len(keys)
-        ypred = {}
         print 'Empezando la prediccion'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
-        for i in xrange(m):
-            if self.h(self.theta,X[keys[i]]) >= self.umbral: ypred[keys[i]] = 1
-            else: ypred[keys[i]] = 0
+        ypred = {k: 1 if self.h(self.theta,X[k]) >= self.umbral else 0 for k in X.keys()}
+##        ypred = {}
+##        for i in xrange(m):
+##            if self.h(self.theta,X[keys[i]]) >= self.umbral: ypred[keys[i]] = 1
+##            else: ypred[keys[i]] = 0
         print 'Prediccion realizada'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         return ypred
     def comparar(self,y,ypred):
+        '''Compara los valores de y e ypred, calculando algunos factores
+           que nos dicen si la prediccion es buena'''
         print 'Empezando la comparacion'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         keys = y.keys()
@@ -199,7 +219,7 @@ y = abrir('y_1.txt') #Tarda 18 segundos, por fin algo normal!
 print 'Leido archivo y'
 print 'Instanciando la clase'
 print 'Hora actual: ' + time.strftime("%H:%M:%S")
-prob = LogReg(X,y,Lambda=0,umbral=0.5)
+prob = LogReg(X,y,Lambda=10,umbral=0.5)
             
         
 
