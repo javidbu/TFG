@@ -1,0 +1,46 @@
+Cargando datos training
+Datos cargados training
+Cargando datos test
+Datos cargados test
+Guardando datos
+Datos guardados
+Training
+Prediciendo
+Calculando probabilidades
+##########################################
+Parametros del training set
+##########################################
+TP: 0
+FP: 2
+TN: 6363349
+FN: 8811
+Accuracy: 99.8616952927 %
+
+Sensitivity (Recall): 0.0 %
+
+Specificity: 99.99996857 %
+
+Precission: 0.0 %
+
+F score: 0.0 %
+
+G mean: 0.0 %
+
+##########################################
+Parametros del test set
+##########################################
+TP: 0
+FP: 2
+TN: 1591266
+FN: 2232
+Accuracy: 99.8598054597 %
+
+Sensitivity (Recall): 0.0 %
+
+Specificity: 99.9998743141 %
+
+Precission: 0.0 %
+
+F score: 0.0 %
+
+G mean: 0.0 %
