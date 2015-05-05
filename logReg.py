@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
 from leer import *
 import time
+from gradDesc import *
 #minimize da errores!!!
 
 #Ver si deja de dar memory errors el codigo de numpy usando numexpr
@@ -81,9 +82,7 @@ class LogReg:
         self.umbral = umbral
         self.m = len(X.keys()) #Numero de transacciones
         self.nFeat = len(X.values()[0]) #Numero de variables de entrada
-        self.X = {k: [1] + self.X[k] for k in self.X.keys()} #Mas rapido...
-##        for k in self.X.keys():
-##            self.X[k] = [1]+self.X[k] #Añadimos unos al principio de cada transaccion
+        self.X = {k: [1] + self.X[k] for k in self.X.keys()} #Añadimos unos al principio de cada transaccion
         self.my = len(y.keys()) #Numero de transacciones en la y
         if self.m != self.my:
             raise TypeError('El numero de transacciones de X no concuerda con el de y')
@@ -98,10 +97,7 @@ class LogReg:
         self.comparar(self.y,self.predict(self.X))
     def h(self,theta,x): #Hipotesis para valores dados de theta y x
         '''Calcula la h_theta(x) de la regresion logistica.'''
-        suma = sum(theta[i]*x[i] for i in xrange(len(theta))) #Mas rapido
-##        suma = 0
-##        for i in range(len(theta)): #Esto estaría mejor con vectores...
-##            suma += theta[i]*x[i] 
+        suma = sum(theta[i]*x[i] for i in xrange(len(theta)))  #Esto estaría mejor con vectores...
         return sigmoid(suma)         
     def coste(self, theta, X, y, Lambda): #Tarda 2 minutos... El problema serio esta en el gradiente, pero esto tampoco es admisible...
         '''Calcula el valor de la funcion de coste para valores dados
@@ -111,17 +107,8 @@ class LogReg:
         m = len(X.keys())
         suma = sum(y[k]*np.log(self.h(theta,X[k])) if y[k] == 1
                     else (1-y[k])*np.log(1-self.h(theta,X[k])) for k in X.keys())
-##        suma = 0.
-##        keys = X.keys()
-##        m = len(keys)
-##        for k in xrange(m): #Esto iria mejor con vectores
-##            suma += y[keys[k]]*np.log(self.h(theta,X[keys[k]]))#Aqui da errores, igual seria mejor que calculase las cosas con un if (ademas supongo que sera mas rapido)
-##            suma += (1-y[keys[k]])*np.log(1-self.h(theta,X[keys[k]]))
         suma = suma/(float(m))
-        suma2 = sum(j**2 for j in theta[1:])
-##        suma2 = 0.
-##        for j in range(1,len(theta)): #Regularizacion, ignoramos theta_0
-##            suma2 += theta[j]**2
+        suma2 = sum(j**2 for j in theta[1:]) #Regularizacion, ignoramos theta_0
         suma2 = suma2*Lambda/(2.*m)
         print 'Coste calculado'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
@@ -133,14 +120,8 @@ class LogReg:
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         keys = X.keys()
         m = len(keys)
-        grad = [sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in X.keys()) + Lambda*theta[j] if j > 0 else
-                sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in X.keys()) for j in range(len(theta))]
-##        grad = [0]*len(theta)
-##        for j in range(len(grad)):
-##            for k in xrange(m): #Hay que usar vectores y matrices!!!
-##                grad[j] += (self.h(theta,X[keys[k]])-y[keys[k]])*X[keys[k]][j]
-##            if j != 0:
-##                grad[j] += Lambda*theta[j]
+        grad = [sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in keys) + Lambda*theta[j] if j > 0 else
+                sum((self.h(theta,X[k])-y[k])*float(X[k][j]) for k in keys) for j in range(len(theta))] #Hay que usar vectores y matrices!!!
         print 'Gradiente calculado'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         return [x/float(m) for x in grad]
@@ -148,12 +129,14 @@ class LogReg:
         '''Llama a la funcion minimize para hallar el valor optimo de theta'''
         print 'Optimizando theta'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
-        res = minimize(self.coste, self.init_theta,
-                       args = (self.X, self.y, self.Lambda),
-                       method = 'BFGS', jac=self.grad,
-                       options={'maxiter': 400,'disp':True})
-        #BFGS no funciona bien (precission loss... 0 iteraciones...)... probando con Newton-CG
-        self.theta = res.x
+        res = gradDesc(self.init_theta,self.coste,self.grad,alfa = 0.01,Disp = True,X = self.X,y = self.y,Lambda = self.Lambda)
+##        res = minimize(self.coste, self.init_theta,
+##                       args = (self.X, self.y, self.Lambda),
+##                       method = 'BFGS', jac=self.grad,
+##                       options={'maxiter': 400,'disp':True})
+##        #BFGS no funciona bien (precission loss... 0 iteraciones...)... probando con Newton-CG
+##        self.theta = res.x
+        self.theta = res
         print 'Theta optimizada'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
     def predict(self,X):
@@ -164,10 +147,6 @@ class LogReg:
         print 'Empezando la prediccion'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         ypred = {k: 1 if self.h(self.theta,X[k]) >= self.umbral else 0 for k in X.keys()}
-##        ypred = {}
-##        for i in xrange(m):
-##            if self.h(self.theta,X[keys[i]]) >= self.umbral: ypred[keys[i]] = 1
-##            else: ypred[keys[i]] = 0
         print 'Prediccion realizada'
         print 'Hora actual: ' + time.strftime("%H:%M:%S")
         return ypred
