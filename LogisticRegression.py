@@ -1,39 +1,46 @@
+# -*- coding: utf-8 -*-
 from sklearn import linear_model
 import numpy as np
 from leer import guardar, abrir
+from ordenar import orden, reducir
 
-print 'Cargando datos training'
-X = np.matrix(np.genfromtxt('training/Split_1.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))
-X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_2.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
-X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_3.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
-X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_4.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
-#X = X[:10000,:]
+#print 'Cargando datos training'
+#X = np.matrix(np.genfromtxt('training/Split_1.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))
+#X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_2.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
+#X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_3.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
+#X = np.concatenate((X,np.matrix(np.genfromtxt('training/Split_4.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))))
+##X = X[:10000,:]
+##y = np.array(X[:,-1]).reshape((-1,))
+##X = X[:,:-1]
+#print 'Datos cargados training'
+#
+#print 'Cargando datos test'
+#X_test = np.matrix(np.genfromtxt('test/aleatorio.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))
+##X_test = X_test[:10000,:]
+#y_test = np.array(X_test[:,-1]).reshape((-1,))
+#X_test = X_test[:,:-1]
+#print 'Datos cargados test'
+#
+#print 'Guardando datos'
+#guardar(X,'X_train.txt')
+##guardar(y,'y_train.txt')
+#guardar(X_test,'X_test.txt')
+#guardar(y_test,'y_test.txt')
+#print 'Datos guardados'
+
+print 'Cargando datos'
+X = abrir('X_train.txt')
+#y = abrir('y_train.txt')
+X_test = abrir('X_test.txt')
+y_test = abrir('y_test.txt')
+print 'Datos cargados'
+
+X = orden(X,1)
+X = reducir(X,1)
 y = np.array(X[:,-1]).reshape((-1,))
 X = X[:,:-1]
-print 'Datos cargados training'
 
-print 'Cargando datos test'
-X_test = np.matrix(np.genfromtxt('test/aleatorio.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))
-#X_test = X_test[:10000,:]
-y_test = np.array(X_test[:,-1]).reshape((-1,))
-X_test = X_test[:,:-1]
-print 'Datos cargados test'
-
-print 'Guardando datos'
-guardar(X,'X_train.txt')
-guardar(y,'y_train.txt')
-guardar(X_test,'X_test.txt')
-guardar(y_test,'y_test.txt')
-print 'Datos guardados'
-
-#print 'Cargando datos'
-#X = abrir('X_train.txt')
-#y = abrir('y_train.txt')
-#X_test = abrir('X_test.txt')
-#y_test = abrir('y_test.txt')
-#print 'Datos cargados'
-
-clf = linear_model.LogisticRegression(C=1000000)
+clf = linear_model.LogisticRegression(C=1)
 print 'Training'
 clf.fit(X,y)
 
@@ -59,9 +66,9 @@ for i in range(len(y)):
         else:
             TN += 1
 acc = float(TP + TN)/float(TP + FP + TN + FN)*100
-rec = float(TP)/float(TP+FN)*100
-spec = float(TN)/float(FP+TN)*100
-prec = float(TP)/float(TP+FP)*100
+rec = float(TP)/float(TP+FN)*100 if TP != 0 else 0
+spec = float(TN)/float(FP+TN)*100 if TN != 0 else 0
+prec = float(TP)/float(TP+FP)*100 if TP != 0 else 0
 f = 2*prec*rec/(prec+rec) if prec != 0 else 0.
 g = np.sqrt(rec*spec)
 print '##########################################'
@@ -94,9 +101,9 @@ for i in range(len(y_test)):
         else:
             TN += 1
 acc = float(TP + TN)/float(TP + FP + TN + FN)*100
-rec = float(TP)/float(TP+FN)*100
-spec = float(TN)/float(FP+TN)*100
-prec = float(TP)/float(TP+FP)*100
+rec = float(TP)/float(TP+FN)*100 if TP != 0 else 0
+spec = float(TN)/float(FP+TN)*100 if TN != 0 else 0
+prec = float(TP)/float(TP+FP)*100 if TP != 0 else 0
 f = 2*prec*rec/(prec+rec) if prec != 0 else 0.
 g = np.sqrt(rec*spec)
 print '##########################################'
