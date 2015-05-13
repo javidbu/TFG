@@ -1,13 +1,12 @@
-from numpy import zeros, matrix
-
-#Falta implementar el codigo para sacar las tuplas de valores posibles de cada columna de X!! (Para ahorrarse meterlas a mano...)
+from numpy import zeros, matrix, size
 
 def binarize(X,cols,values):
     '''Recibe una matriz X, una lista de indices de columnas cols y una lista de
        tuplas de valores values, y devuelve una matriz en la que cada columna de
        X se transforma, o bien en una columna de Xnew si el indice de la columna
        no aparece en cols, o bien una serie de columnas con unos si cada valor 
-       de values para esa columna esta en la columna de X, o ceros si no'''
+       de values para esa columna esta en la columna de X, o ceros si no. Se re-
+       comienda usarlo como binarize(X,cols,categorize(X,cols)).'''
     if len(cols) != len(values):
         raise TypeError('cols (list of integers) and values (list of tuples) must have the same length')
     (m,n) = X.shape
@@ -25,3 +24,28 @@ def binarize(X,cols,values):
                 Xnew[:,j] = (X[:,i] == k).astype(int)
                 j += 1
     return Xnew
+
+
+def categorize(X,cols):
+    '''Devuelve una lista de tuplas, cada tupla contiene los valores que toman
+       las categorias en las columnas cols de X'''
+    l = []
+    for i in range(len(cols)):
+        l.append(())
+        colX = X[:,cols[i]]
+        while True:
+            a = colX[0,0]
+            l[i] += (a,)
+            colX = colX[colX[:,:] != a]
+            if size(colX) == 0: break
+    return l
+
+
+
+
+
+
+
+
+
+
