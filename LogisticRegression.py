@@ -3,6 +3,15 @@ from sklearn import linear_model
 import numpy as np
 from leer import guardar, abrir
 from ordenar import orden, reducir
+from binarizar import binarize, categorize
+
+# Variables:
+# 2 - CD_BIN
+# 9 - CD_DW_MOTIVO_RESPUESTA
+# 18 - VL_AUTORIZACION
+# 23 - CD_DW_ACTIVIDAD_ECONOMICA
+# 27 - CD_DW_PREAUTORIZADOR2
+# 28 - CD_DW_PAIS
 
 #print 'Cargando datos training'
 #X = np.matrix(np.genfromtxt('training/Split_1.txt',delimiter = '|', usecols = (2, 9, 18, 23, 27, 28,-2)))
@@ -35,8 +44,14 @@ X_test = abrir('X_test.txt')
 y_test = abrir('y_test.txt')
 print 'Datos cargados'
 
-X = orden(X,1)
 X = reducir(X,1)
+cols = [1,2,4]
+a = categorize(X,cols)
+print a
+X = binarize(X, cols, a)
+X_test = binarize(X_test,cols,categorize(X_test,cols))
+#X = orden(X,1)
+#X = reducir(X,1)
 y = np.array(X[:,-1]).reshape((-1,))
 X = X[:,:-1]
 
